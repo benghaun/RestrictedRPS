@@ -1,0 +1,13 @@
+module chsled (
+    input c[2], //input representing choice
+    output rled, //led that represents rock was chosen
+    output sled, //led that represents scissors was chosen
+    output pled //led that represents paper was chosen
+  ) {
+
+  always {
+    rled = c[0]&(c[0]^c[1]); //compute choices of players based on c, display on relevant led
+    pled = c[0]&c[1];
+    sled = c[1]&(c[0]^c[1]);
+  }
+}

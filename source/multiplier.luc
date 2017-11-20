@@ -1,0 +1,14 @@
+module multiplier (
+    input a[8],     //8-bit input A  
+    input b[8],     //8-bit input B  
+    output out[8]   //8-bit output out
+) {
+  
+  
+  always {
+      out = $signed(a)*$signed(b);
+}
+}
+
+
+

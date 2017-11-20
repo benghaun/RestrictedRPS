@@ -1,0 +1,12 @@
+module btoled3 (
+    input b[3], //3-bit input binary number
+    output led[4] //display 3-bit number(value up to 4) in decimal using 4 leds
+  ) {
+
+  always {
+    led[0] = b[0] | b[1] | b[2];
+    led[1] = b[1] | b[2];
+    led[2] = (b[0]&b[1]) | b[2];
+    led[3] = b[2];
+  }
+}

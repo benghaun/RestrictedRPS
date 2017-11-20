@@ -1,0 +1,223 @@
+module controlUnit (
+    input clk,  // clock
+    input rst,  // reset
+    input aluo[8], //output of alu
+    input c1[2], //choice made by player 1
+    input c2[2], //choice made by player 2
+    input rslt[3], //result of the game
+    input z1, //zero signal for rpsqty1
+    input z2, //zero signal for rpsqty2
+    output alufn[6], //alu function
+    output asel[3], //select a input for alu
+    output bsel[2], //select b input for alu
+    output wrqty1, //write enable signal for RPSQTY1
+    output wrqty2, //write enable signal for RPSQTY2
+    output waqty1[2], //write address for RPSQTY1
+    output waqty2[2], //write address for RPSQTY2
+    output wdqtysel, //select write data for RPSQTY1
+    output wascr[2], //write address for SCR
+    output wrscr, //write enable signal for SCR
+    output ce, //choice enable signal for RPSLGC 
+    output rstsm, //reset signal determined by state machine
+    output be1, //enable button input by player 1
+    output be2, //enable button input by player 2
+    output btnrst1, //reset state of BTN1
+    output btnrst2, //reset state of BTN2
+    output leden, //display result and choices of players
+    output p1win, //signals that indicate that player 1/player 2 has won the match 
+    output p2win,
+    output p1chs, //signals that indicate that it is player 1/2's turn to make a choice
+    output p2chs
+  ) {
+  .clk(clk){
+  .rst(rst){
+    fsm state = {GENRCK,GENSCR,GENPPR,CHOICE10,CHOICE11,CHOICE1X,CHOICE20,CHOICE21,CHOICE2X,CHECKRESULT,P1WIN,P1CHK,P2WIN,P2CHK,P1WINMATCH,P2WINMATCH,DRAW};
+    dff timer[28];
+      }
+  }
+  always {
+    alufn=0; //set default values
+    asel=0;
+    bsel=0;
+    wrqty1=0;
+    wrqty2=0;
+    waqty1=0;
+    waqty2=0;
+    wdqtysel=0;
+    wascr=0;
+    wrscr=0;
+    ce=0;
+    rstsm=0;
+    be1=0;
+    be2=0;
+    btnrst1=0;
+    btnrst2=0;
+    leden=0;
+    p1win=0;
+    p2win=0;
+    p1chs=0;
+    p2chs=0;
+    case (state.q){         
+      state.GENRCK: //generates qty of rocks for each player
+        alufn = 6b000001; //sub       
+        wrqty1 = 1; //write to rock
+        wrqty2 = 1;
+        waqty1 = 1;
+        waqty2 = 1;
+        state.d = state.GENSCR; //generate scissors next
+      
+      state.GENSCR: //generates qty of scissors for each player
+        alufn = 6b000001; //sub
+        wrqty1 = 1; //write to scissors
+        wrqty2 = 1;
+        waqty1 = 2b10;
+        waqty2 = 2b10;
+        state.d = state.GENPPR; //generate paper next
+        
+      state.GENPPR: //generates qty of papers for each player
+        alufn = 6b000001; //sub
+        wrqty1 = 1; //write to paper
+        wrqty2 = 1;
+        waqty1 = 2b11;
+        waqty2 = 2b11;
+        state.d = state.CHOICE10; //player 1 makes choice
+      
+      state.CHOICE10: //player 1 makes choice, check if choice is valid
+        alufn = 6b110011; //cmpeq
+        asel = 1; //select quantity of choice made by player 1
+        bsel = 1; //select constant of 0
+        be1 = 1; //enable button input by player 1
+        p1chs = 1;//indicate that it is player 1's turn
+        if (z1 == 1 || z2 == 1){ //one of the players has ran out of rocks, papers and scissors, result is a draw
+          state.d = state.DRAW;
+        }
+        else if (aluo == 0 && c1 != 00){ //valid choice
+          state.d = state.CHOICE11;
+        }
+        else if (aluo == 1 && c1 != 00){ //invalid choice
+          state.d = state.CHOICE1X;
+        }
+        
+      state.CHOICE11: //player 1 made valid choice, decrease qty of choice by 1
+        alufn = 6b000001; //sub
+        asel = 1; //select quantity of choice nade by player 1
+        bsel = 2b10; //select constant value of 1
+        wrqty1 = 1; //write new decreased qty 
+        waqty1 = c1;
+        wdqtysel = 1;
+        state.d = state.CHOICE20; //player 2 makes choice
+        
+      state.CHOICE1X: //player 1 made invalid choice, make choice again
+        btnrst1 = 1; //reset state of btn1
+        state.d = state.CHOICE10;
+        
+      state.CHOICE20: //player 2 makes choice, check if choice is valid
+        alufn = 6b110011; //cmpeq
+        asel = 3b010; //select quantity of choice made by player 2
+        bsel = 1; //select constant of 0
+        be2 = 1; //enable button input by player 2
+        p2chs = 1; //indicate that it is player 2's turn
+        if (aluo == 0 && c2 != 00){ //valid choice
+          state.d = state.CHOICE21;
+        }
+        else if (aluo == 1 && c2 != 00){ //invalid choice
+          state.d = state.CHOICE2X;
+        }
+        
+      state.CHOICE21: //player 2 made valid choice, decrease qty of choice by 1 
+        alufn = 6b000001; //sub
+        asel = 3b010; //select quantity of choice made by player 2
+        bsel = 2b10; //select constant value of 1
+        wrqty2 = 1; //write new decreased qty 
+        waqty2 = c2;
+        state.d = state.CHECKRESULT;
+      
+      state.CHECKRESULT: //compute game result and display
+        ce = 1; //confirm choices of both players, allow result to be computed
+        leden = 1; //display result of game and choices 
+        timer.d = timer.q + 1;
+        if (timer.q[27] == 1){ //around 2.5 seconds passed, sufficient time for display
+          timer.d = 28h0000000; //reset timer to 0
+          btnrst1 = 1; //reset states of BTN1 and BTN2
+          btnrst2 = 1;
+          if (rslt == 3b001){ //transit to appropriate states, depending on results
+            state.d = state.P1WIN;
+          }
+          else if (rslt == 3b010){
+            state.d = state.P2WIN;
+          }
+          else if (rslt == 3b100){
+            state.d = state.CHOICE10;
+          }
+        }
+        
+      state.CHOICE2X: //player 2 made invalid choice, make choice again
+        btnrst2 = 1; //reset state of btn2
+        state.d = state.CHOICE20;
+        
+      state.P1WIN: //player 1 wins, increase score by 1  
+        asel = 3b011; //select score of player 1
+        bsel = 2b10; //select constant value 1  
+        wrscr = 1; //write new score
+        wascr = 2b01; //write to player 1's score
+        state.d = state.P1CHK; 
+        
+      state.P1CHK: //check if player 1 has won 3 games
+        alufn = 6b110011; //cmpeq
+        asel = 2b11; //select score of player 1  
+        bsel = 2b11; //select constant value 3
+        if (aluo == 1){ //player 1 has won the match
+          state.d = state.P1WINMATCH;
+        }
+        else {
+          state.d = state.CHOICE10; //start new game
+        }
+        
+      state.P2WIN: //player 2 wins, increase score by 1  
+        asel = 3b100; //select score of player 2
+        bsel = 2b10; //select constant value 1 
+        wrscr = 1; //write new score
+        wascr = 2b10; //write to player 2's score
+        state.d = state.P2CHK; 
+        
+      state.P2CHK: //check if player 1 has won 3 games
+        alufn = 6b110011; //cmpeq
+        asel = 3b100; //select score of player 1  
+        bsel = 2b11; //select constant value 3
+        if (aluo == 1){ //player 2 has won the match
+          state.d = state.P2WINMATCH;
+        }
+        else {
+          state.d = state.CHOICE10; //start new game
+        }
+      
+      state.P1WINMATCH: //player 1 has won, blink player 1's leds, restart the game
+        p1win = 1;
+        timer.d = timer.q+1;
+         if (timer.q[27] == 1){ //around 2.5 seconds passed, sufficient time for display
+            timer.d = 28h0000000; //reset timer to 0, restart the game
+            rstsm = 1; 
+            state.d = state.GENRCK;     
+         }   
+        
+      state.P2WINMATCH: //player 2 has won, blink player 2's leds, restart the game
+        p2win=1;
+        timer.d = timer.q+1;
+        if (timer.q[27] == 1){ //around 2.5 seconds passed, sufficient time for display
+          timer.d = 28h0000000; //reset timer to 0, restart the game
+          rstsm = 1;
+          state.d = state.GENRCK;     
+        }
+        
+      state.DRAW: //match ends in a draw, blink both player's leds, restart the game
+        p1win = 1;
+        p2win = 1;
+        timer.d = timer.q+1;
+        if (timer.q[27] == 1){ //around 2.5 seconds passed, sufficient time for display
+          timer.d = 28h0000000; //reset timer to 0, restart the game
+          rstsm = 1;
+          state.d = state.GENRCK;     
+        }          
+  }
+}
+}

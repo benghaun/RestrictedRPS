@@ -1,0 +1,30 @@
+module rng (
+    input clk,  // clock
+    input rst,  // reset
+    output out[3]
+  ) {
+  .clk(clk){
+  .rst(rst){
+    pn_gen pn_gen;
+    }
+  }
+  sig randNum[3]; //temporary signal to store the generated random number
+
+  always {
+    pn_gen.seed = 0; 
+    pn_gen.next = 1; //keep generating numbers
+    randNum = pn_gen.num[2:0];    
+    out = randNum; 
+    if (randNum[2] == 1){ //if highest bit is 1 and lowest 2 bits is nonzero, make the highest bit to be 0. Ensures value is never higher than 4 (3b100)
+      if (randNum[1:0] == 2b00){
+        out[2] = 1;
+      }
+      else{
+        out[2] = 0;
+      }
+    }
+    if (randNum == 3b000){ //if random number generated is 0, make it 4 instead
+      out = 3b100;
+      }
+  }
+}

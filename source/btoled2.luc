@@ -1,0 +1,11 @@
+module btoled2 (
+    input b[2], //2-bit binary number
+    output led[3] //display 2-bit binary number in decimal using 3 leds
+  ) {
+
+  always {
+    led[0] = b[0] | b[1];
+    led[1] = b[1];
+    led[2] = b[0] & b[1];
+  }
+}

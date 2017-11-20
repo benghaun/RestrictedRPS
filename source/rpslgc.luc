@@ -1,0 +1,24 @@
+module rpslgc (
+    input c1[2], //choice of player 1
+    input c2[2], //choice of player 2
+    output rslt[3] //result of the game
+  ) {
+  
+  sig r1; //signal for player 1 choosing rock
+  sig r2; //signal for player 2 choosing rock
+  sig p1; //signal for player 1 choosing paper
+  sig p2; //signal for player 2 choosing paper
+  sig s1; //signal for player 1 choosing scissors
+  sig s2; //signal for player 2 choosing scissors
+  always {
+    r1 = c1[0]&(c1[0]^c1[1]); //compute choices of players based on c1/c2
+    p1 = c1[0]&c1[1];
+    s1 = c1[1]&(c1[0]^c1[1]);
+    r2 = c2[0]&(c2[0]^c2[1]);
+    p2 = c2[0]&c2[1];
+    s2 = c2[1]&(c2[0]^c2[1]);
+    rslt[0] = (r1&s2) | (s1&p2) | (p1&r2); //this is 1 if player 1 wins
+    rslt[1] = (r2&s1) | (s2&p1) | (p2&r1); //this is high if player 2 wins
+    rslt[2] = (r1&r2) | (s1&s2) | (p1&p2); //this is high if its a draw
+  }
+}

@@ -1,0 +1,173 @@
+module mojo_top (
+    input clk,              // 50MHz clock
+    input rst_n,            // reset button (active low)
+    
+    input r1, //buttons for player 1 to make his choice
+    input p1,
+    input s1,
+    input r2, //buttons for player 2 to make his choice
+    input p2,
+    input s2,
+    input rstbut, //reset button
+
+    output r1led[4], //leds to represent quantites of rocks, papers and scissors of each player
+    output r2led[4],
+    output p1led[4],
+    output p2led[4],
+    output s1led[4],
+    output s2led[4],
+     
+    output scr1led[3], //led to display scores of players
+    output scr2led[3],
+    
+    output p1winled, //led that displays the results of each game
+    output p2winled,
+    output drawled,
+    
+    output r1chs,
+    output r2chs,
+    output s1chs,
+    output s2chs,
+    output p1chs,
+    output p2chs
+  ) {
+  
+  sig rst;                  // reset signal
+  sig rst2;
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+    reset_conditioner reset_cond2;
+    rng rng;
+    btn btn1;
+    btn btn2;
+    .rst(rst2){
+      rpsqty rpsqty1;
+      rpsqty rpsqty2;
+      controlUnit controlunit;
+      alu alu;
+      scr scr;
+    }
+  }
+  rpslgc rpslgc;
+  chsled chsled1;
+  chsled chsled2;
+  
+  always {
+    reset_cond.in = ~rst_n; // input raw inverted reset signal
+    rst = reset_cond.out;   // conditioned reset
+    reset_cond2.in = rstbut;
+    rst2 = reset_cond2.out | controlunit.rstsm;
+    rng.rst = rst; 
+      
+    //inputs to control unit
+    controlunit.aluo = alu.result;
+    controlunit.c1 = btn1.c;
+    controlunit.c2 = btn2.c;
+    controlunit.rslt = rpslgc.rslt;
+    controlunit.z1 = rpsqty1.z;
+    controlunit.z2 = rpsqty2.z;
+    
+    //inputs to rpsqty1/rpsqty2 modules
+    rpsqty1.wrqty = controlunit.wrqty1;
+    rpsqty1.r = btn1.c;
+    rpsqty1.waqty = controlunit.waqty1;
+    
+    case (controlunit.wdqtysel){ //wdqtysel mux
+      1:
+        rpsqty1.wdqty = alu.result[2:0];      
+        
+      default:
+        rpsqty1.wdqty = rng.out;
+    }
+    
+    rpsqty2.wrqty = controlunit.wrqty2;
+    rpsqty2.r = btn2.c;
+    rpsqty2.waqty = controlunit.waqty2;
+    rpsqty2.wdqty = alu.result[2:0];
+    
+    //inputs to alu
+    case (controlunit.asel){//asel mux
+      default:
+        alu.a = 8b00000101;
+      
+      3b001:
+        alu.a = rpsqty1.out;
+       
+      3b010:
+        alu.a = rpsqty2.out;
+        
+      3b011:
+        alu.a = scr.scr1;
+        
+      3b100:
+        alu.a = scr.scr2;
+    }
+    
+    case (controlunit.bsel){//bsel mux
+      default:
+        alu.b = rng.out;
+        
+      2b01:
+        alu.b = 8b00000000;
+        
+      2b10:
+        alu.b = 8b00000001;
+        
+      2b11:
+        alu.b = 8b00000011;
+    }
+    
+    alu.alufn = controlunit.alufn;
+    
+    //inputs to rpslgc module
+    rpslgc.c1 = btn1.c;
+    rpslgc.c2 = btn2.c;
+    
+    //inputs to btn modules
+    btn1.s = s1;
+    btn2.s = s2;
+    btn1.p = p1;
+    btn2.p = p2;
+    btn1.r = r1;
+    btn2.r = r2;
+    btn1.be = controlunit.be1;
+    btn2.be = controlunit.be2;
+    btn1.rst = rst2 | controlunit.btnrst1;
+    btn2.rst = rst2 | controlunit.btnrst2;
+    
+    //inputs to scr module
+    scr.wrscr = controlunit.wrscr;
+    scr.wascr = controlunit.wascr;
+    scr.wdscr = alu.result[1:0];
+    scr.p1win = controlunit.p1win;
+    scr.p2win = controlunit.p2win;
+    
+    //leds to display score
+    scr1led = scr.scr1led;
+    scr2led = scr.scr2led;
+    
+    //inputs to chsled modules
+    chsled1.c = btn1.c;
+    chsled2.c = btn2.c;
+    
+    
+    //connect leds       
+    p1winled = rpslgc.rslt[0]&controlunit.leden;
+    p2winled = rpslgc.rslt[1]&controlunit.leden;
+    drawled = rpslgc.rslt[2]&controlunit.leden;
+    r1chs = chsled1.rled&controlunit.leden;
+    p1chs = chsled1.pled&controlunit.leden;
+    s1chs = chsled1.sled&controlunit.leden;
+    r2chs = chsled2.rled&controlunit.leden;
+    p2chs = chsled2.pled&controlunit.leden;
+    s2chs = chsled2.sled&controlunit.leden;
+    r1led = rpsqty1.rled;
+    r2led = rpsqty2.rled;
+    p1led = rpsqty1.pled;
+    p2led = rpsqty2.pled;
+    s1led = rpsqty1.sled;
+    s2led = rpsqty2.sled;
+  }
+}

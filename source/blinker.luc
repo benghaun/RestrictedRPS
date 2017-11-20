@@ -1,0 +1,15 @@
+module blinker (
+    input clk,  // clock
+    input rst,  // reset
+    output led //led to blink
+  ) {
+  .clk(clk){
+    .rst(rst){
+      dff blink[25]; //counter to blink the led
+    }
+  }
+  always {
+    blink.d = blink.q + 1;
+    led = blink.q[24]; //light up led when most significant bit of blink is 1, which happens half the time
+  }
+}

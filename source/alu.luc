@@ -1,0 +1,80 @@
+module alu (
+    input clk,  // clock
+    input rst,  // reset
+    input alufn[6],
+    input a[8],
+    input b[8],
+    output z, //z, v and n signals
+    output v,
+    output n,
+    output result[8] //result of alu
+  ) {
+
+  
+.clk(clk) {
+    .rst(rst){
+    }
+  }
+  addSubtract addSubtract; //subcircuits of ALU
+  bool bool;
+  comparator comparator;
+  shifter shifter;
+  multiplier multiplier;
+  
+  
+  always {    
+    //connect inputs to adder module
+    addSubtract.a = a;
+    addSubtract.b = b;
+    addSubtract.alufn0 = alufn[0];
+    
+    //connect comparator to adder outputs
+    comparator.z = addSubtract.z; 
+    comparator.n = addSubtract.n;
+    comparator.v = addSubtract.v;
+    comparator.alufn = alufn[2:1];
+    
+    //connect inputs to bool moudule
+    bool.a = a;
+    bool.b = b;
+    bool.alufn = alufn[3:0];
+    
+    //connect inputs to shifter module
+    shifter.a = a;
+    shifter.b = b[2:0];
+    shifter.alufn = alufn[1:0];
+    
+    //connect inputs to multiplier module
+    multiplier.a = a;
+    multiplier.b = b;     
+    
+    //output z,v and n signals
+    z = addSubtract.z;
+    v = addSubtract.v;
+    n = addSubtract.n;
+    //determine which operation to perform based on 2 most significant bits of ALUFN    
+    case (alufn[5:4]){
+      2b00:
+        result = addSubtract.out;
+        if (alufn[1:0] == 2b10){
+          result = multiplier.out;
+        }
+      2b01:
+        result = bool.out;
+      
+      2b10:
+        result = shifter.out;
+      
+      2b11:
+        result = comparator.out;
+      
+      default:
+        result = 8b00;  
+    }
+    
+
+    
+
+    
+  }
+}

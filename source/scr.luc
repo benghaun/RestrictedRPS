@@ -1,0 +1,54 @@
+module scr (
+    input clk,  // clock
+    input rst,  // reset
+    input wrscr, //write enable signal
+    input wascr[2], //write address
+    input wdscr[2], //write data
+    input p1win, //input to check if either player has won
+    input p2win,
+    output scr1[2], //score of player 1  
+    output scr2[2], //score of player 2
+    output scr1led[3], //leds to display the score of each player
+    output scr2led[3]
+  ) {
+  .clk(clk){
+    .rst(rst){
+      dff score1[2]; //register that stores the score of player 1  
+      dff score2[2]; //register that stores the score of player 2  
+      blinker blinker; //blinker to blink players' leds if needed
+    }
+  }
+  
+  btoled2 scr1btoled; //btoled2 modules to convert 2-bit score to display using led
+  btoled2 scr2btoled;
+   
+  always {
+    if (wrscr&wascr[0] == 1){ //write to register specified by address if write enable signal is high 
+      score1.d = wdscr;
+    }
+    if (wrscr&wascr[1] == 1){
+      score2.d = wdscr;
+    }
+    
+   
+    scr1 = score1.q; //set outputs as data in register
+    scr2 = score2.q; 
+    
+    scr1btoled.b = score1.q; //connect outputs of btoled modules to led
+    scr2btoled.b = score2.q;
+    
+    if (p1win){
+      scr1led = 3x{blinker.led};
+    }
+    else{
+      scr1led = scr1btoled.led;
+    }
+    
+    if(p2win){
+      scr2led = 3x{blinker.led};
+    }
+    else{
+      scr2led = scr2btoled.led;
+    }
+  }
+}

@@ -1,0 +1,68 @@
+module rpsqty (
+    input clk,  // clock
+    input rst,  // reset
+    input waqty[2], //write address of register
+    input wrqty, //write enable signal
+    input wdqty[3], //data to be written
+    input r[2], //read address
+    output out[3], //read data
+    output rled[4], //led to display quantities left for each of rocks, papers, and scissors
+    output pled[4],
+    output sled[4],
+    output z //signal that is 1 if all quantities are zero
+  ) {
+  .clk(clk){
+    .rst(rst){
+      dff rckqty[3]; //registers to store the quantities of rocks, papers and scissors that a player has
+      dff pprqty[3];
+      dff scrqty[3];
+    }
+  }
+  btoled3 btoledr;
+  btoled3 btoledp;
+  btoled3 btoleds;
+  
+  sig wr; //signals that decide which register to write to, if writing is needed
+  sig ws;
+  sig wp;
+
+  always {
+    wr = waqty[0]&(waqty[0]^waqty[1])&wrqty; //compute write signals
+    wp = waqty[0]&waqty[1]&wrqty;
+    ws = waqty[1]&(waqty[0]^waqty[1])&wrqty;
+    
+    z = ~(rckqty.q[0]|scrqty.q[0]|pprqty.q[0]|rckqty.q[1]|scrqty.q[1]|pprqty.q[1]); //compute z signal
+    
+    if (wr == 1){ //write to register if write signal is high
+      rckqty.d = wdqty;
+    }
+    if (wp == 1){
+      pprqty.d = wdqty;
+    }
+    if (ws == 1){
+      scrqty.d = wdqty;
+    } 
+    
+    btoledr.b = rckqty.q; //set inputs of btoled modules as quantites of rocks, papers and scissors
+    btoledp.b = pprqty.q;
+    btoleds.b = scrqty.q;
+    
+    rled = btoledr.led;
+    pled = btoledp.led;
+    sled = btoleds.led;
+    
+    case (r) { //set read data output based on read address
+      2b01:
+        out = rckqty.q;
+      
+      2b10:
+        out = scrqty.q;
+        
+      2b11:
+        out = pprqty.q;
+      
+      default:
+        out = 3b000;
+  }
+}
+}

@@ -1,0 +1,25 @@
+module btn (
+    input clk,  // clock
+    input rst,  // reset
+    input r, //rock button
+    input p, //paper button
+    input s, //scissors button
+    input be, //button enable signal from control controlUnit
+    output c[2] //2 bit number representing choice of player: 00 - rock, 01 - scissors, 11 - paper
+  ) {
+  .clk(clk){
+    .rst(rst){
+      dff rck; //registers storing if player has pressed rock, paper or scissors button
+      dff scr;
+      dff ppr;
+    }
+  }
+
+  always {
+    rck.d = r&be | rck.q; //store value in registers as 1 if button is pressed and be signal is high. Else, keep previous value
+    scr.d = s&be | scr.q;
+    ppr.d = p&be | ppr.q;
+    c[0] = rck.q | ppr.q; //set output c signal based on values stored in register
+    c[1] = scr.q | ppr.q;
+  }
+}
