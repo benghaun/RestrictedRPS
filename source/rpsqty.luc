@@ -31,7 +31,7 @@ module rpsqty (
     wp = waqty[0]&waqty[1]&wrqty;
     ws = waqty[1]&(waqty[0]^waqty[1])&wrqty;
     
-    z = ~(rckqty.q[0]|scrqty.q[0]|pprqty.q[0]|rckqty.q[1]|scrqty.q[1]|pprqty.q[1]); //compute z signal
+    z = ~(rckqty.q[0]|scrqty.q[0]|pprqty.q[0]|rckqty.q[1]|scrqty.q[1]|pprqty.q[1]|rckqty.q[2]|scrqty.q[2]|pprqty.q[2]); //compute z signal
     
     if (wr == 1){ //write to register if write signal is high
       rckqty.d = wdqty;
