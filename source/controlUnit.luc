@@ -26,8 +26,8 @@ module controlUnit (
     output leden, //display result and choices of players
     output p1win, //signals that indicate that player 1/player 2 has won the match 
     output p2win,
-    output p1chs, //signals that indicate that it is player 1/2's turn to make a choice
-    output p2chs
+    output p1turn, //signals that indicate that it is player 1/2's turn to make a choice
+    output p2turn
   ) {
   .clk(clk){
   .rst(rst){
@@ -55,8 +55,8 @@ module controlUnit (
     leden=0;
     p1win=0;
     p2win=0;
-    p1chs=0;
-    p2chs=0;
+    p1turn=0;
+    p2turn=0;
     case (state.q){         
       state.GENRCK: //generates qty of rocks for each player
         alufn = 6b000001; //sub       
@@ -87,7 +87,7 @@ module controlUnit (
         asel = 1; //select quantity of choice made by player 1
         bsel = 1; //select constant of 0
         be1 = 1; //enable button input by player 1
-        p1chs = 1;//indicate that it is player 1's turn
+        p1turn = 1;//indicate that it is player 1's turn
         if (z1 == 1 || z2 == 1){ //one of the players has ran out of rocks, papers and scissors, result is a draw
           state.d = state.DRAW;
         }
@@ -116,7 +116,7 @@ module controlUnit (
         asel = 3b010; //select quantity of choice made by player 2
         bsel = 1; //select constant of 0
         be2 = 1; //enable button input by player 2
-        p2chs = 1; //indicate that it is player 2's turn
+        p2turn = 1; //indicate that it is player 2's turn
         if (aluo == 0 && c2 != 00){ //valid choice
           state.d = state.CHOICE21;
         }

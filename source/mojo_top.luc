@@ -29,7 +29,10 @@ module mojo_top (
     output s1chs,
     output s2chs,
     output p1chs,
-    output p2chs
+    output p2chs,
+    
+    output p1turn, //leds that display which player's turn it is
+    output p2turn
   ) {
   
   sig rst;                  // reset signal
@@ -169,5 +172,7 @@ module mojo_top (
     p2led = rpsqty2.pled;
     s1led = rpsqty1.sled;
     s2led = rpsqty2.sled;
+    p1turn = controlunit.p1turn;
+    p2turn = controlunit.p2turn;
   }
 }
